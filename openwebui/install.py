@@ -45,9 +45,21 @@ if (os.path.exists(nginx_dest) and os.path.exists(searxng_dest) and
         print(f"Failed to remove Docker images: {e}")
 
 else:
-    # Move the directories and file
+    # Copy the directories and file
+    def copy_tree(src, dst):
+        if not os.path.exists(dst):
+            shutil.copytree(src, dst)
+        else:
+            for item in os.listdir(src):
+                s = os.path.join(src, item)
+                d = os.path.join(dst, item)
+                if os.path.isdir(s):
+                    copy_tree(s, d)
+                else:
+                    shutil.copy2(s, d)
+
     try:
-        shutil.copytree(nginx_src, nginx_dest, dirs_exist_ok=True)
+        copy_tree(nginx_src, nginx_dest)
         print(f"Copied {nginx_src} to {nginx_dest}")
     except FileNotFoundError:
         print(f"Directory not found: {nginx_src}")
@@ -55,7 +67,7 @@ else:
         print(f"Permission denied when copying {nginx_src}")
 
     try:
-        shutil.copytree(searxng_src, searxng_dest, dirs_exist_ok=True)
+        copy_tree(searxng_src, searxng_dest)
         print(f"Copied {searxng_src} to {searxng_dest}")
     except FileNotFoundError:
         print(f"Directory not found: {searxng_src}")
@@ -130,7 +142,7 @@ except subprocess.CalledProcessError as e:
 
 # Install Ollama
 try:
-    subprocess.run(['sh', '-c', 'curl -fsSL https://ollama.com/install.sh | sh'], input=sudo_password.encode(), check=True)
+    subprocess.run(['sh', '-c', 'curl -fsSL https://ollama.com/install.sh | sh'], check=True)
     print("Ollama has been installed successfully.")
 except subprocess.CalledProcessError as e:
     print(f"Failed to install Ollama: {e}")
