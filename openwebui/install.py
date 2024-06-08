@@ -42,9 +42,6 @@ except subprocess.CalledProcessError:
 try:
     run_sudo_command(['usermod', '-aG', 'docker', current_user], sudo_password)
     print(f"Added {current_user} to the docker group. You may need to log out and log back in for the changes to take effect.")
-    # Apply the group change immediately for the current session
-    docker_group_id = int(subprocess.run(['getent', 'group', 'docker'], capture_output=True, text=True).stdout.split(':')[2])
-    os.setgroups(os.getgroups() + [docker_group_id])
 except subprocess.CalledProcessError as e:
     print(f"Failed to add {current_user} to the docker group: {e}")
 
