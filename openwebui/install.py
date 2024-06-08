@@ -9,13 +9,6 @@ server_ip = input("Enter the IP address of your server: ")
 # Prompt the user for their sudo password
 sudo_password = getpass.getpass("Enter your sudo password: ")
 
-# Install Ollama
-try:
-    subprocess.run(['curl', '-fsSL', 'https://ollama.com/install.sh', '|', 'sh'], input=sudo_password.encode(), check=True, shell=True)
-    print("Ollama has been installed successfully.")
-except subprocess.CalledProcessError as e:
-    print(f"Failed to install Ollama: {e}")
-
 # Define source and destination paths
 current_directory = os.getcwd()
 nginx_src = os.path.join(current_directory, 'nginx')
@@ -54,28 +47,28 @@ if (os.path.exists(nginx_dest) and os.path.exists(searxng_dest) and
 else:
     # Move the directories and file
     try:
-        shutil.move(nginx_src, destination_directory)
-        print(f"Moved {nginx_src} to {destination_directory}")
+        shutil.copytree(nginx_src, nginx_dest, dirs_exist_ok=True)
+        print(f"Copied {nginx_src} to {nginx_dest}")
     except FileNotFoundError:
         print(f"Directory not found: {nginx_src}")
     except PermissionError:
-        print(f"Permission denied when moving {nginx_src}")
+        print(f"Permission denied when copying {nginx_src}")
 
     try:
-        shutil.move(searxng_src, destination_directory)
-        print(f"Moved {searxng_src} to {destination_directory}")
+        shutil.copytree(searxng_src, searxng_dest, dirs_exist_ok=True)
+        print(f"Copied {searxng_src} to {searxng_dest}")
     except FileNotFoundError:
         print(f"Directory not found: {searxng_src}")
     except PermissionError:
-        print(f"Permission denied when moving {searxng_src}")
+        print(f"Permission denied when copying {searxng_src}")
 
     try:
-        shutil.move(compose_file_src, destination_directory)
-        print(f"Moved {compose_file_src} to {destination_directory}")
+        shutil.copy2(compose_file_src, destination_directory)
+        print(f"Copied {compose_file_src} to {destination_directory}")
     except FileNotFoundError:
         print(f"File not found: {compose_file_src}")
     except PermissionError:
-        print(f"Permission denied when moving {compose_file_src}")
+        print(f"Permission denied when copying {compose_file_src}")
 
     # Generate self-signed certificate and key
     os.makedirs(ssl_directory, exist_ok=True)
@@ -134,6 +127,13 @@ except PermissionError:
     print("Permission denied when modifying /etc/systemd/logind.conf")
 except subprocess.CalledProcessError as e:
     print(f"Failed to restart systemd-logind service: {e}")
+
+# Install Ollama
+try:
+    subprocess.run(['sh', '-c', 'curl -fsSL https://ollama.com/install.sh | sh'], input=sudo_password.encode(), check=True)
+    print("Ollama has been installed successfully.")
+except subprocess.CalledProcessError as e:
+    print(f"Failed to install Ollama: {e}")
 
 # Check if stable-diffusion-webui exists before attempting to install it
 stable_diffusion_dir = os.path.expanduser('~/stable-diffusion-webui')
