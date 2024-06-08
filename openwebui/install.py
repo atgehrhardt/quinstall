@@ -30,6 +30,18 @@ def run_sudo_command(command, password):
     process = subprocess.run(['sudo', '-S'] + command, input=password.encode(), check=True)
     return process
 
+# Ensure the current user is part of the docker group
+current_user = os.getlogin()
+try:
+    subprocess.run(['groups', current_user], check=True, capture_output=True, text=True).stdout.split()
+    if 'docker' not in subprocess.run(['groups', current_user], capture_output=True, text=True).stdout.split():
+        run_sudo_command(['usermod', '-aG', 'docker', current_user], sudo_password)
+        print(f"Added {current_user} to the docker group. You may need to log out and log back in for the changes to take effect.")
+        # Apply the group change immediately for the current session
+        os.setgroups(os.getgroups() + [subprocess.run(['getent', 'group', 'docker'], capture_output=True, text=True).stdout.split(':')[2]])
+except subprocess.CalledProcessError as e:
+    print(f"Failed to add {current_user} to the docker group: {e}")
+
 # Check if all files exist in the target locations
 if (os.path.exists(nginx_dest) and os.path.exists(searxng_dest) and
         os.path.exists(os.path.join(destination_directory, 'docker-compose.yaml')) and
