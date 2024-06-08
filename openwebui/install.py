@@ -30,15 +30,20 @@ def run_sudo_command(command, password):
     process = subprocess.run(['sudo', '-S'] + command, input=password.encode(), check=True)
     return process
 
-# Ensure the current user is part of the docker group
+# Ensure the Docker group exists and add the current user to it
 current_user = os.getlogin()
 try:
-    subprocess.run(['groups', current_user], check=True, capture_output=True, text=True).stdout.split()
-    if 'docker' not in subprocess.run(['groups', current_user], capture_output=True, text=True).stdout.split():
-        run_sudo_command(['usermod', '-aG', 'docker', current_user], sudo_password)
-        print(f"Added {current_user} to the docker group. You may need to log out and log back in for the changes to take effect.")
-        # Apply the group change immediately for the current session
-        os.setgroups(os.getgroups() + [subprocess.run(['getent', 'group', 'docker'], capture_output=True, text=True).stdout.split(':')[2]])
+    run_sudo_command(['getent', 'group', 'docker'], sudo_password)
+    print("Docker group already exists.")
+except subprocess.CalledProcessError:
+    print("Docker group does not exist. Creating Docker group...")
+    run_sudo_command(['groupadd', 'docker'], sudo_password)
+
+try:
+    run_sudo_command(['usermod', '-aG', 'docker', current_user], sudo_password)
+    print(f"Added {current_user} to the docker group. You may need to log out and log back in for the changes to take effect.")
+    # Apply the group change immediately for the current session
+    os.setgroups(os.getgroups() + [subprocess.run(['getent', 'group', 'docker'], capture_output=True, text=True).stdout.split(':')[2]])
 except subprocess.CalledProcessError as e:
     print(f"Failed to add {current_user} to the docker group: {e}")
 
