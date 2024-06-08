@@ -52,14 +52,14 @@ if (os.path.exists(nginx_dest) and os.path.exists(searxng_dest) and
 
     # Take down Docker containers
     try:
-        subprocess.run(['docker-compose', 'down'], cwd=destination_directory, check=True)
+        subprocess.run(['docker', 'compose', 'down'], cwd=destination_directory, check=True)
         print("Docker containers have been taken down.")
     except subprocess.CalledProcessError as e:
         print(f"Failed to take down Docker containers: {e}")
 
     # Delete Docker images (but not the volumes)
     try:
-        subprocess.run(['docker-compose', 'rm', '--force'], cwd=destination_directory, check=True)
+        subprocess.run(['docker', 'compose', 'rm', '--force'], cwd=destination_directory, check=True)
         print("Docker images have been removed.")
     except subprocess.CalledProcessError as e:
         print(f"Failed to remove Docker images: {e}")
@@ -141,7 +141,7 @@ else:
 
 # Run docker-compose up -d
 try:
-    subprocess.run(['docker-compose', 'up', '-d'], cwd=destination_directory, check=True)
+    subprocess.run(['docker', 'compose', 'up', '-d'], cwd=destination_directory, check=True)
     print("Docker containers are up and running.")
 except subprocess.CalledProcessError as e:
     print(f"Failed to start Docker containers: {e}")
@@ -220,3 +220,10 @@ WantedBy=multi-user.target
         print(f"Failed to enable or start stable-diffusion-webui service: {e}")
 else:
     print(f"stable-diffusion-webui already exists at {stable_diffusion_dir}, skipping installation and service creation.")
+
+# Run the additional docker container
+try:
+    subprocess.run(['docker', 'run', '-d', '-p', '9099:9099', '--add-host=host.docker.internal:host-gateway', '-v', 'pipelines:/app/pipelines', '--name', 'pipelines', '--restart', 'always', 'ghcr.io/open-webui/pipelines:main'], check=True)
+    print("Docker container for pipelines has been started successfully.")
+except subprocess.CalledProcessError as e:
+    print(f"Failed to start Docker container for pipelines: {e}")
