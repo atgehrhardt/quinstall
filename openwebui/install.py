@@ -55,7 +55,7 @@ else:
                 d = os.path.join(dst, item)
                 if os.path.isdir(s):
                     copy_tree(s, d)
-                else:
+                elif not os.path.exists(d):
                     shutil.copy2(s, d)
 
     try:
@@ -75,8 +75,12 @@ else:
         print(f"Permission denied when copying {searxng_src}")
 
     try:
-        shutil.copy2(compose_file_src, destination_directory)
-        print(f"Copied {compose_file_src} to {destination_directory}")
+        compose_file_dest = os.path.join(destination_directory, os.path.basename(compose_file_src))
+        if not os.path.exists(compose_file_dest):
+            shutil.copy2(compose_file_src, destination_directory)
+            print(f"Copied {compose_file_src} to {destination_directory}")
+        else:
+            print(f"File {compose_file_src} already exists at destination.")
     except FileNotFoundError:
         print(f"File not found: {compose_file_src}")
     except PermissionError:
@@ -86,28 +90,32 @@ else:
     os.makedirs(ssl_directory, exist_ok=True)
 
     try:
-        subprocess.run([
-            'openssl', 'req', '-x509', '-nodes', '-days', '365',
-            '-newkey', 'rsa:2048', '-keyout', key_path, '-out', crt_path,
-            '-subj', '/CN=localhost'
-        ], check=True)
-        print(f"Generated self-signed certificate at {crt_path} and key at {key_path}")
+        if not os.path.exists(crt_path) or not os.path.exists(key_path):
+            subprocess.run([
+                'openssl', 'req', '-x509', '-nodes', '-days', '365',
+                '-newkey', 'rsa:2048', '-keyout', key_path, '-out', crt_path,
+                '-subj', '/CN=localhost'
+            ], check=True)
+            print(f"Generated self-signed certificate at {crt_path} and key at {key_path}")
+        else:
+            print(f"Self-signed certificate and key already exist at {crt_path} and {key_path}")
     except subprocess.CalledProcessError as e:
         print(f"Failed to generate self-signed certificate: {e}")
 
     # Update nginx.conf with the provided IP address
     try:
-        with open(nginx_conf_path, 'r') as file:
-            nginx_conf = file.read()
+        if os.path.exists(nginx_conf_path):
+            with open(nginx_conf_path, 'r') as file:
+                nginx_conf = file.read()
 
-        nginx_conf = nginx_conf.replace('ENTER IP ADDR HERE', server_ip)
+            nginx_conf = nginx_conf.replace('ENTER IP ADDR HERE', server_ip)
 
-        with open(nginx_conf_path, 'w') as file:
-            file.write(nginx_conf)
+            with open(nginx_conf_path, 'w') as file:
+                file.write(nginx_conf)
 
-        print(f"Updated {nginx_conf_path} with the IP address {server_ip}")
-    except FileNotFoundError:
-        print(f"File not found: {nginx_conf_path}")
+            print(f"Updated {nginx_conf_path} with the IP address {server_ip}")
+        else:
+            print(f"File not found: {nginx_conf_path}")
     except PermissionError:
         print(f"Permission denied when updating {nginx_conf_path}")
 
