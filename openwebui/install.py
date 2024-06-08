@@ -1,9 +1,20 @@
 import shutil
 import os
 import subprocess
+import getpass
 
 # Prompt the user for the server IP address
 server_ip = input("Enter the IP address of your server: ")
+
+# Prompt the user for their sudo password
+sudo_password = getpass.getpass("Enter your sudo password: ")
+
+# Install Ollama
+try:
+    subprocess.run(['curl', '-fsSL', 'https://ollama.com/install.sh', '|', 'sh'], input=sudo_password.encode(), check=True, shell=True)
+    print("Ollama has been installed successfully.")
+except subprocess.CalledProcessError as e:
+    print(f"Failed to install Ollama: {e}")
 
 # Define source and destination paths
 current_directory = os.getcwd()
@@ -101,3 +112,68 @@ try:
     print("Docker containers are up and running.")
 except subprocess.CalledProcessError as e:
     print(f"Failed to start Docker containers: {e}")
+
+# Prevent the system from suspending, sleeping, or hibernating when the laptop lid is closed
+try:
+    with open('/etc/systemd/logind.conf', 'r') as file:
+        logind_conf = file.read()
+
+    logind_conf = logind_conf.replace('#HandleLidSwitch=suspend', 'HandleLidSwitch=ignore')
+    logind_conf = logind_conf.replace('#HandleLidSwitchDocked=suspend', 'HandleLidSwitchDocked=ignore')
+    logind_conf = logind_conf.replace('#HandleLidSwitchExternalPower=suspend', 'HandleLidSwitchExternalPower=ignore')
+
+    with open('/etc/systemd/logind.conf', 'w') as file:
+        file.write(logind_conf)
+
+    # Restart systemd-logind service to apply changes
+    subprocess.run(['sudo', '-S', 'systemctl', 'restart', 'systemd-logind'], input=sudo_password.encode(), check=True)
+    print("Configured the system to ignore lid close actions and restarted systemd-logind service.")
+except FileNotFoundError:
+    print("File not found: /etc/systemd/logind.conf")
+except PermissionError:
+    print("Permission denied when modifying /etc/systemd/logind.conf")
+except subprocess.CalledProcessError as e:
+    print(f"Failed to restart systemd-logind service: {e}")
+
+# Check if stable-diffusion-webui exists before attempting to install it
+stable_diffusion_dir = os.path.expanduser('~/stable-diffusion-webui')
+if not os.path.exists(stable_diffusion_dir):
+    try:
+        subprocess.run(['git', 'clone', 'https://github.com/AUTOMATIC1111/stable-diffusion-webui.git', stable_diffusion_dir], check=True)
+        print(f"Cloned stable-diffusion-webui into {stable_diffusion_dir}")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to clone stable-diffusion-webui: {e}")
+
+    # Create systemd service for stable-diffusion-webui
+    service_content = f"""[Unit]
+Description=Stable Diffusion Web UI
+After=network.target
+
+[Service]
+Type=simple
+ExecStart={stable_diffusion_dir}/webui.sh --api --listen
+WorkingDirectory={stable_diffusion_dir}
+User={os.getlogin()}
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+"""
+
+    service_path = '/etc/systemd/system/stable-diffusion-webui.service'
+    try:
+        with open(service_path, 'w') as file:
+            file.write(service_content)
+        print(f"Created systemd service file at {service_path}")
+
+        # Enable and start the service
+        subprocess.run(['sudo', '-S', 'systemctl', 'enable', 'stable-diffusion-webui'], input=sudo_password.encode(), check=True)
+        subprocess.run(['sudo', '-S', 'systemctl', 'start', 'stable-diffusion-webui'], input=sudo_password.encode(), check=True)
+        print("Enabled and started the stable-diffusion-webui service.")
+    except PermissionError:
+        print(f"Permission denied when creating or enabling {service_path}")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to enable or start stable-diffusion-webui service: {e}")
+else:
+    print(f"stable-diffusion-webui already exists at {stable_diffusion_dir}, skipping installation and service creation.")

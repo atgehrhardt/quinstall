@@ -3,3 +3,14 @@ mkdir -p openwebui && curl -L https://github.com/atgehrhardt/quinstall/archive/r
 
 python3 install.py
 ```
+Installs openwebui docker
+Installs nginx docker
+Installs searxng docker
+
+Configures searxng
+Configures nginx
+
+Installs Ollama
+
+Installs Stable Diffusion WebUI
+Creates system service for Stable Diffusion WebUI
