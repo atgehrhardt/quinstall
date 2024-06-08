@@ -25,6 +25,11 @@ nginx_conf_path = os.path.join(nginx_dest, 'nginx.conf')
 # Ensure the destination directory exists
 os.makedirs(destination_directory, exist_ok=True)
 
+# Function to run commands with sudo
+def run_sudo_command(command, password):
+    process = subprocess.run(['sudo', '-S'] + command, input=password.encode(), check=True)
+    return process
+
 # Check if all files exist in the target locations
 if (os.path.exists(nginx_dest) and os.path.exists(searxng_dest) and
         os.path.exists(os.path.join(destination_directory, 'docker-compose.yaml')) and
@@ -135,11 +140,13 @@ try:
     logind_conf = logind_conf.replace('#HandleLidSwitchDocked=suspend', 'HandleLidSwitchDocked=ignore')
     logind_conf = logind_conf.replace('#HandleLidSwitchExternalPower=suspend', 'HandleLidSwitchExternalPower=ignore')
 
-    with open('/etc/systemd/logind.conf', 'w') as file:
+    with open('/tmp/logind.conf', 'w') as file:
         file.write(logind_conf)
 
+    run_sudo_command(['mv', '/tmp/logind.conf', '/etc/systemd/logind.conf'], sudo_password)
+
     # Restart systemd-logind service to apply changes
-    subprocess.run(['sudo', '-S', 'systemctl', 'restart', 'systemd-logind'], input=sudo_password.encode(), check=True)
+    run_sudo_command(['systemctl', 'restart', 'systemd-logind'], sudo_password)
     print("Configured the system to ignore lid close actions and restarted systemd-logind service.")
 except FileNotFoundError:
     print("File not found: /etc/systemd/logind.conf")
@@ -183,13 +190,14 @@ WantedBy=multi-user.target
 
     service_path = '/etc/systemd/system/stable-diffusion-webui.service'
     try:
-        with open(service_path, 'w') as file:
+        with open('/tmp/stable-diffusion-webui.service', 'w') as file:
             file.write(service_content)
-        print(f"Created systemd service file at {service_path}")
+
+        run_sudo_command(['mv', '/tmp/stable-diffusion-webui.service', service_path], sudo_password)
 
         # Enable and start the service
-        subprocess.run(['sudo', '-S', 'systemctl', 'enable', 'stable-diffusion-webui'], input=sudo_password.encode(), check=True)
-        subprocess.run(['sudo', '-S', 'systemctl', 'start', 'stable-diffusion-webui'], input=sudo_password.encode(), check=True)
+        run_sudo_command(['systemctl', 'enable', 'stable-diffusion-webui'], sudo_password)
+        run_sudo_command(['systemctl', 'start', 'stable-diffusion-webui'], sudo_password)
         print("Enabled and started the stable-diffusion-webui service.")
     except PermissionError:
         print(f"Permission denied when creating or enabling {service_path}")
