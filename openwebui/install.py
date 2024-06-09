@@ -14,6 +14,7 @@ current_directory = os.getcwd()
 nginx_src = os.path.join(current_directory, 'nginx')
 searxng_src = os.path.join(current_directory, 'searxng')
 compose_file_src = os.path.join(current_directory, 'docker-compose.yaml')
+http_host_conf_src = os.path.join(current_directory, 'http-host.conf')
 destination_directory = os.path.expanduser('~/openwebui')
 nginx_dest = os.path.join(destination_directory, 'nginx')
 searxng_dest = os.path.join(destination_directory, 'searxng')
@@ -21,6 +22,7 @@ ssl_directory = os.path.join(nginx_dest, 'self-signed')
 crt_path = os.path.join(ssl_directory, 'self-signed.crt')
 key_path = os.path.join(ssl_directory, 'self-signed.key')
 nginx_conf_path = os.path.join(nginx_dest, 'nginx.conf')
+http_host_conf_dest = '/etc/systemd/system/ollama.service.d/http-host.conf'
 
 # Ensure the destination directory exists
 os.makedirs(destination_directory, exist_ok=True)
@@ -176,6 +178,24 @@ try:
     print("Ollama has been installed successfully.")
 except subprocess.CalledProcessError as e:
     print(f"Failed to install Ollama: {e}")
+
+# Move http-host.conf and run specified commands
+try:
+    if not os.path.exists('/etc/systemd/system/ollama.service.d'):
+        run_sudo_command(['mkdir', '-p', '/etc/systemd/system/ollama.service.d'], sudo_password)
+        
+    run_sudo_command(['mv', http_host_conf_src, http_host_conf_dest], sudo_password)
+    print(f"Moved {http_host_conf_src} to {http_host_conf_dest}")
+
+    run_sudo_command(['systemctl', 'daemon-reload'], sudo_password)
+    run_sudo_command(['systemctl', 'restart', 'ollama'], sudo_password)
+    print("Reloaded systemd daemon and restarted Ollama service.")
+except FileNotFoundError:
+    print(f"File not found: {http_host_conf_src}")
+except PermissionError:
+    print(f"Permission denied when moving {http_host_conf_src} or running systemctl commands")
+except subprocess.CalledProcessError as e:
+    print(f"Failed to run systemctl commands for Ollama: {e}")
 
 # Check if stable-diffusion-webui exists before attempting to install it
 stable_diffusion_dir = os.path.expanduser('~/stable-diffusion-webui')
