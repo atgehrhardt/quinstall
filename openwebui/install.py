@@ -206,12 +206,15 @@ if not os.path.exists(stable_diffusion_dir):
     except subprocess.CalledProcessError as e:
         print(f"Failed to clone stable-diffusion-webui: {e}")
 
-    # Install python3-venv
+    # Install python3-venv and Rust
     try:
         run_sudo_command(['apt-get', 'install', '-y', 'python3-venv'], sudo_password)
-        print("Installed python3-venv package.")
+        subprocess.run(['curl', '--proto', '=https', '--tlsv1.2', '-sSf', 'https://sh.rustup.rs', '-o', 'rustup-init.sh'], check=True)
+        subprocess.run(['sh', 'rustup-init.sh', '-y'], check=True)
+        os.environ["PATH"] += os.pathsep + os.path.expanduser("~/.cargo/bin")
+        print("Installed python3-venv and Rust.")
     except subprocess.CalledProcessError as e:
-        print(f"Failed to install python3-venv package: {e}")
+        print(f"Failed to install python3-venv or Rust: {e}")
 
     # Create and activate the virtual environment
     try:
@@ -221,6 +224,7 @@ if not os.path.exists(stable_diffusion_dir):
         venv_activate_script = """
         cd {0}
         source venv/bin/activate
+        pip install --upgrade pip
         pip install -r requirements.txt
         """.format(stable_diffusion_dir)
 
