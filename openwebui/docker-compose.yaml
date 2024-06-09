@@ -21,8 +21,8 @@ services:
       - 'RAG_WEB_SEARCH_RESULT_COUNT=3'
       - 'RAG_WEB_SEARCH_CONCURRENT_REQUESTS=10'
       - 'SEARXNG_QUERY_URL=http://searxng:8080/search?q=<query>'
-      - 'OPENAI_API_BASE_URLS=http://host.docker.internal:9099'
-      - 'OPENAI_API_KEYS=0p3n-w3bu!'
+      - 'OPENAI_API_BASE_URL=http://host.docker.internal:9099'
+      - 'OPENAI_API_KEY=0p3n-w3bu!'
     extra_hosts:
       - host.docker.internal:host-gateway
     restart: unless-stopped
