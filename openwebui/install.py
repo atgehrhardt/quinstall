@@ -219,6 +219,9 @@ if not os.path.exists(stable_diffusion_dir):
     # Set the PKG_CONFIG_PATH environment variable
     os.environ["PKG_CONFIG_PATH"] = "/usr/lib/x86_64-linux-gnu/pkgconfig"
 
+    # Ensure pip is up-to-date
+    subprocess.run(['pip', 'install', '--upgrade', 'pip'], check=True)
+
     # Create and activate the virtual environment
     try:
         subprocess.run(['python3', '-m', 'venv', 'venv'], cwd=stable_diffusion_dir, check=True)
