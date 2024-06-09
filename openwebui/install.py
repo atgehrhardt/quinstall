@@ -216,8 +216,19 @@ if not os.path.exists(stable_diffusion_dir):
     # Create and activate the virtual environment
     try:
         subprocess.run(['python3', '-m', 'venv', 'venv'], cwd=stable_diffusion_dir, check=True)
-        subprocess.run(['source', 'venv/bin/activate'], cwd=stable_diffusion_dir, check=True, shell=True)
-        subprocess.run(['pip', 'install', '-r', 'requirements.txt'], cwd=stable_diffusion_dir, check=True)
+        
+        # Run the following commands in a shell script
+        venv_activate_script = """
+        cd {0}
+        source venv/bin/activate
+        pip install -r requirements.txt
+        """.format(stable_diffusion_dir)
+
+        with open("/tmp/activate_venv.sh", "w") as script_file:
+            script_file.write(venv_activate_script)
+
+        run_sudo_command(['chmod', '+x', '/tmp/activate_venv.sh'], sudo_password)
+        subprocess.run(['/bin/bash', '/tmp/activate_venv.sh'], check=True)
         print("Python virtual environment created and dependencies installed.")
     except subprocess.CalledProcessError as e:
         print(f"Failed to create or activate the virtual environment: {e}")
