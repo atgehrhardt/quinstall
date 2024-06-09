@@ -212,6 +212,7 @@ if not os.path.exists(stable_diffusion_dir):
         subprocess.run(['curl', '--proto', '=https', '--tlsv1.2', '-sSf', 'https://sh.rustup.rs', '-o', 'rustup-init.sh'], check=True)
         subprocess.run(['sh', 'rustup-init.sh', '-y'], check=True)
         os.environ["PATH"] += os.pathsep + os.path.expanduser("~/.cargo/bin")
+        subprocess.run(['sh', '-c', '. $HOME/.cargo/env'], check=True)
         print("Installed python3-venv, libssl-dev, and Rust.")
     except subprocess.CalledProcessError as e:
         print(f"Failed to install python3-venv, libssl-dev, or Rust: {e}")
@@ -220,7 +221,10 @@ if not os.path.exists(stable_diffusion_dir):
     os.environ["PKG_CONFIG_PATH"] = "/usr/lib/x86_64-linux-gnu/pkgconfig"
 
     # Ensure pip is up-to-date
-    subprocess.run(['pip', 'install', '--upgrade', 'pip'], check=True)
+    try:
+        subprocess.run(['python3', '-m', 'pip', 'install', '--upgrade', 'pip'], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to upgrade pip: {e}")
 
     # Create and activate the virtual environment
     try:
