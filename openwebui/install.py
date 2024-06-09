@@ -206,6 +206,13 @@ if not os.path.exists(stable_diffusion_dir):
     except subprocess.CalledProcessError as e:
         print(f"Failed to clone stable-diffusion-webui: {e}")
 
+    # Install python3-venv
+    try:
+        run_sudo_command(['apt-get', 'install', '-y', 'python3-venv'], sudo_password)
+        print("Installed python3-venv package.")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to install python3-venv package: {e}")
+
     # Create and activate the virtual environment
     try:
         subprocess.run(['python3', '-m', 'venv', 'venv'], cwd=stable_diffusion_dir, check=True)
