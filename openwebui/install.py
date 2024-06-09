@@ -206,6 +206,15 @@ if not os.path.exists(stable_diffusion_dir):
     except subprocess.CalledProcessError as e:
         print(f"Failed to clone stable-diffusion-webui: {e}")
 
+    # Create and activate the virtual environment
+    try:
+        subprocess.run(['python3.10', '-m', 'venv', 'venv'], cwd=stable_diffusion_dir, check=True)
+        subprocess.run(['source', 'venv/bin/activate'], cwd=stable_diffusion_dir, check=True, shell=True)
+        subprocess.run(['pip', 'install', '-r', 'requirements.txt'], cwd=stable_diffusion_dir, check=True)
+        print("Python virtual environment created and dependencies installed.")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to create or activate the virtual environment: {e}")
+
     # Create systemd service for stable-diffusion-webui
     service_content = f"""[Unit]
 Description=Stable Diffusion Web UI
@@ -213,9 +222,9 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/bin/sh -c '{stable_diffusion_dir}/webui.sh --api --listen'
-WorkingDirectory={stable_diffusion_dir}
-User={os.getlogin()}
+ExecStart=/home/{current_user}/stable-diffusion-webui/venv/bin/python /home/{current_user}/stable-diffusion-webui/webui.py --api --listen
+WorkingDirectory=/home/{current_user}/stable-diffusion-webui
+User={current_user}
 Restart=always
 RestartSec=10
 
