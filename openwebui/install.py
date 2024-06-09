@@ -213,7 +213,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart={stable_diffusion_dir}/webui.sh --api --listen
+ExecStart=/bin/sh -c '{stable_diffusion_dir}/webui.sh --api --listen'
 WorkingDirectory={stable_diffusion_dir}
 User={os.getlogin()}
 Restart=always
