@@ -208,7 +208,7 @@ if not os.path.exists(stable_diffusion_dir):
 
     # Create and activate the virtual environment
     try:
-        subprocess.run(['python3.10', '-m', 'venv', 'venv'], cwd=stable_diffusion_dir, check=True)
+        subprocess.run(['python3', '-m', 'venv', 'venv'], cwd=stable_diffusion_dir, check=True)
         subprocess.run(['source', 'venv/bin/activate'], cwd=stable_diffusion_dir, check=True, shell=True)
         subprocess.run(['pip', 'install', '-r', 'requirements.txt'], cwd=stable_diffusion_dir, check=True)
         print("Python virtual environment created and dependencies installed.")
