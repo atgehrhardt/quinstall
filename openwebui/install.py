@@ -216,6 +216,9 @@ if not os.path.exists(stable_diffusion_dir):
     except subprocess.CalledProcessError as e:
         print(f"Failed to install python3-venv, libssl-dev, or Rust: {e}")
 
+    # Set the PKG_CONFIG_PATH environment variable
+    os.environ["PKG_CONFIG_PATH"] = "/usr/lib/x86_64-linux-gnu/pkgconfig"
+
     # Create and activate the virtual environment
     try:
         subprocess.run(['python3', '-m', 'venv', 'venv'], cwd=stable_diffusion_dir, check=True)
